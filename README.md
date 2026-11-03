@@ -20,7 +20,7 @@ Then the dependency in the app's `build.gradle.kts`:
 
 ```kotlin
 dependencies {
-    implementation("com.github.vidursaini:hailbell-android:1.0.0")
+    implementation("com.github.vidursaini:hailbell-android:1.1.0")
 }
 ```
 

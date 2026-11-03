@@ -12,6 +12,7 @@ import okhttp3.RequestBody.Companion.toRequestBody
 import org.json.JSONArray
 import org.json.JSONObject
 import java.util.Locale
+import java.util.TimeZone
 import java.util.UUID
 import java.util.concurrent.TimeUnit
 
@@ -28,6 +29,7 @@ internal class Client(private val context: Context, val appId: String, val baseU
         val metadata = JSONObject()
         (deviceMetadata() + identity.metadata).forEach { (k, v) -> metadata.put(k, v) }
         val body = JSONObject().put("appId", appId).put("anonymousId", installId(context)).put("metadata", metadata)
+            .put("timeZone", TimeZone.getDefault().id)
         identity.userId?.let { body.put("userId", it) }
         identity.name?.let { body.put("name", it) }
         identity.email?.let { body.put("email", it) }
@@ -134,6 +136,7 @@ internal class Client(private val context: Context, val appId: String, val baseU
         "appVersion" to appVersion(context),
         "os" to "Android ${Build.VERSION.RELEASE}",
         "locale" to Locale.getDefault().toLanguageTag(),
+        "device" to "${Build.MANUFACTURER} ${Build.MODEL}",
     )
 
     companion object {
