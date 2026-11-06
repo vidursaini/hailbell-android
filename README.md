@@ -20,7 +20,7 @@ Then the dependency in the app's `build.gradle.kts`:
 
 ```kotlin
 dependencies {
-    implementation("com.github.vidursaini:hailbell-android:1.1.1")
+    implementation("com.github.vidursaini:hailbell-android:1.1.2")
 }
 ```
 
@@ -73,7 +73,7 @@ The full guide, with entry points, signed-in users, offers, the Play data safety
 | `Hailbell.configure(context, appId, baseUrl)` | Call once in `Application.onCreate()`. Also creates the reply notification channel. |
 | `Hailbell.open(activity)` | Opens the chat as a full-height sheet in its own activity. |
 | `Hailbell.unreadCount: StateFlow<Int>` | Replies not yet read; use it for a badge. |
-| `Hailbell.teamPhoto: Bitmap?` | A photo bundled in the app for the chat header. Without it, the dashboard photo loads. |
+| `Hailbell.teamPhoto: Bitmap?` | Deprecated: set the photo in the dashboard. A bundled photo shows only until the chat hears from Hailbell, and never once the dashboard signs replies as the team, turns photos off or sets a photo for this app. |
 | `Hailbell.identify(userId, name, email, identityToken)` | Who the user is. Only `identityToken`, an HS256 JWT signed with the app's identity secret, links the chat across devices. |
 | `Hailbell.identify(name, email) { firebaseIdToken }` | For apps on Firebase Auth: the lambda returns the current ID token. Hailbell verifies it and uses the Firebase uid as the user id. |
 | `Hailbell.asksForNotifications` | Default true. After the first message, the chat offers to turn on notifications if they're off. |
