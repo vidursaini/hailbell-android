@@ -20,14 +20,14 @@ Then the dependency in the app's `build.gradle.kts`:
 
 ```kotlin
 dependencies {
-    implementation("com.github.vidursaini:hailbell-android:1.1.2")
+    implementation("com.github.vidursaini:hailbell-android:1.1.3")
 }
 ```
 
 Requirements:
 
 - minSdk 26, compileSdk 36 or later, Java 17.
-- The library brings OkHttp, Coil, Compose, `lifecycle-process` and Play's in-app review library.
+- The library brings OkHttp, Coil, Compose and `lifecycle-process`. A review card's button opens your Play Store listing.
 - It has no Firebase dependency. The app passes FCM tokens and messages in.
 - Its manifest adds `INTERNET`, `POST_NOTIFICATIONS` and the chat activity, and Gradle merges them.
 
