@@ -84,9 +84,24 @@ The full guide, with entry points, signed-in users, offers, the Play data safety
 | `Hailbell.onPaywall` | `(placement, purchased) -> Unit`: open the paywall, and call `purchased()` if they buy. |
 | `Hailbell.setPushToken(token)` | The FCM registration token. |
 | `Hailbell.reset()` | On sign-out: clears the identity and the cached chat. |
+| `Hailbell.shakeToReport` | Default false. When true, shaking the phone opens the bug report screen. |
+| `Hailbell.trackScreen(name)` | Remembers the screen the user is on. A bug report carries the last 10. |
+| `Hailbell.reportBug(activity)` | Takes a screenshot and opens the bug report screen, for a "Report a problem" button. |
 | `suspend Hailbell.deleteData()` | Deletes the user's chat, images and details from Hailbell. Throws if the server can't be reached. |
 
-`Message`, `Attachment` and `Card` are public, for apps that read the conversation.
+`Message`, `Attachment`, `Card` and `BugReport` are public, for apps that read the conversation.
+
+## Bug reports
+
+Bug reports are opt-in. Turn on shake to report, name your screens, and add a "Report a problem" button if you like:
+
+```kotlin
+Hailbell.shakeToReport = true          // shaking the phone opens the report screen
+Hailbell.trackScreen("Settings")       // call when each screen appears
+Hailbell.reportBug(activity)           // for a "Report a problem" button
+```
+
+The report screen shows a screenshot of the current screen, which the user can mark up with their finger or remove, and a box for what went wrong. When they tap Send, the report carries the screenshot, their text, the app version and build, the device model, the Android version, the language and the last 10 screens from `trackScreen`. It lands in the normal chat inbox, tagged as a bug report, and the inbox has a Bugs filter. There is no session replay, and nothing is captured or sent until the user taps Send. The accelerometer is only used while `shakeToReport` is on and the app is on screen.
 
 ## HailbellPush
 
@@ -111,6 +126,7 @@ The full guide, with entry points, signed-in users, offers, the Play data safety
 | `ChatTheme.kt` | Colours from the dashboard's Chat design |
 | `ImageEncoder.kt` | Photo resizing to JPEG under 1.4 MB |
 | `NotifyAsk.kt`, `Push.kt` | The notification offer, the reply channel and `HailbellPush` |
+| `BugReports.kt`, `BugReportActivity.kt` | Tracked screens, shake detection, the screenshot and the report screen with markup |
 | `L10n.kt` | The chat's own words in 14 languages |
 
 ## Building from source
