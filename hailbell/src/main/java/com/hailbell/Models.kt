@@ -230,9 +230,12 @@ data class Attachment(val id: String, val url: String, val width: Double?, val h
     }
 }
 
-/** A message from you with a button: a review request (opens `url`) or an offer (opens `placement`). */
+/**
+ * A message from you with a button: a review request (opens `url`), an offer (opens `placement`) or a
+ * bug report request (opens the report screen).
+ */
 data class Card(
-    /** "review" | "offer" */
+    /** "review" | "offer" | "report" */
     val type: String,
     val button: String,
     val url: String?,
@@ -240,8 +243,11 @@ data class Card(
     /** "sent" | "dismissed" | "tapped" | "purchased" */
     val state: String,
 ) {
-    /** Cards open a paywall placement or an https link; anything else shows as a plain message. */
-    val isShown: Boolean get() = placement != null || url?.startsWith("https://") == true
+    /**
+     * Cards open a paywall placement, an https link or the report screen; anything else shows as a
+     * plain message.
+     */
+    val isShown: Boolean get() = type == "report" || placement != null || url?.startsWith("https://") == true
 
     internal fun json(): JSONObject = JSONObject().put("type", type).put("button", button).putOpt("url", url)
         .putOpt("placement", placement).put("state", state)

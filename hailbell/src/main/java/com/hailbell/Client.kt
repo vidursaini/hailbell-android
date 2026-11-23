@@ -147,6 +147,7 @@ internal class Client(private val context: Context, val appId: String, val baseU
         "os" to "Android ${Build.VERSION.RELEASE}",
         "locale" to Locale.getDefault().toLanguageTag(),
         "device" to deviceModel(),
+        "hailbellSdk" to Hailbell.SDK_VERSION,
     )
 
     companion object {

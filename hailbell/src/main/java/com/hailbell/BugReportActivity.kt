@@ -3,11 +3,15 @@ package com.hailbell
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.graphics.Paint
+import android.net.Uri
 import android.os.Bundle
 import android.graphics.Color as AndroidColor
 import androidx.activity.ComponentActivity
 import androidx.activity.SystemBarStyle
 import androidx.activity.compose.BackHandler
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.PickVisualMediaRequest
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.Canvas
@@ -38,6 +42,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material.icons.filled.Image
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
@@ -63,6 +68,7 @@ import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.IntOffset
@@ -70,14 +76,18 @@ import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import java.io.File
 import kotlin.math.min
 import kotlin.math.roundToInt
 
 /**
- * The report screen that [Hailbell.reportBug] and a shake open: the screenshot, which the user can
- * mark up or remove, a box for what went wrong, and Send. The report goes into the chat.
+ * The report screen that [Hailbell.reportBug], a shake and the chat's bug report card open: the
+ * screenshot, which the user can mark up or remove, a box for what went wrong, and Send. Without a
+ * screenshot (the card opens it with none) the user can add one from their photos. The report goes
+ * into the chat.
  */
 class BugReportActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -119,6 +129,15 @@ internal class ReportState : ViewModel() {
         screenshot = runCatching { BitmapFactory.decodeFile(path) }.getOrNull()
     }
 
+    /** A photo the user picked in place of a screenshot, scaled like the chat's own photos. */
+    fun pick(context: android.content.Context, uri: Uri) {
+        val app = context.applicationContext
+        Hailbell.scope.launch {
+            val image = withContext(Dispatchers.IO) { ImageEncoder.load(app, uri) } ?: return@launch
+            screenshot = image
+        }
+    }
+
     val canSend: Boolean get() = !sending && (text.isNotBlank() || screenshot != null)
 
     fun send() {
@@ -150,6 +169,10 @@ private fun ReportScreen(state: ReportState, onClose: () -> Unit) {
     val appearance by Hailbell.chat.appearance.collectAsState()
     val theme = ChatTheme(appearance, Hailbell.darkMode ?: isSystemInDarkTheme())
     var marking by remember { mutableStateOf(false) }
+    val context = LocalContext.current
+    val picker = rememberLauncherForActivityResult(ActivityResultContracts.PickVisualMedia()) { uri ->
+        if (uri != null) state.pick(context, uri)
+    }
     LaunchedEffect(state.sent) { if (state.sent) onClose() }
 
     Box(Modifier.fillMaxSize().background(theme.background)) {
@@ -190,6 +213,13 @@ private fun ReportScreen(state: ReportState, onClose: () -> Unit) {
                             Pill(L10n.text("removeScreenshot"), { Icon(Icons.Filled.Delete, null, Modifier.size(16.dp), tint = theme.primary) }, theme, !state.sending) {
                                 state.screenshot = null
                             }
+                        }
+                    }
+                }
+                if (state.screenshot == null) {
+                    Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
+                        Pill(L10n.text("addScreenshot"), { Icon(Icons.Filled.Image, null, Modifier.size(16.dp), tint = theme.primary) }, theme, !state.sending) {
+                            picker.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly))
                         }
                     }
                 }

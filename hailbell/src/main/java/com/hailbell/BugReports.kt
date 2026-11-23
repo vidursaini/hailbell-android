@@ -24,8 +24,9 @@ import java.util.Locale
 import kotlin.math.sqrt
 
 /**
- * Bug reports: the screens the user passed through, the shake that opens the report screen, the
- * screenshot taken just before it opens, and the device details sent with the report. Nothing leaves
+ * Bug reports: the screens the user passed through, the app's log lines and failed requests, the
+ * shake that opens the report screen, the screenshot taken just before it opens, and the device
+ * details sent with the report. Nothing leaves
  * the phone until the user taps Send on the report screen.
  */
 internal object BugReports {
@@ -51,8 +52,48 @@ internal object BugReports {
     /** For tests: forget the tracked screens. */
     fun resetScreens() = synchronized(screens) { screens.clear() }
 
+    // Hailbell.log lines and failed requests, cleaned by Redact as they are recorded.
+
+    const val MAX_LOGS = 50
+    const val MAX_REQUESTS = 10
+    private val logs = ArrayDeque<Map<String, Any>>()
+    private val requests = ArrayDeque<Map<String, Any>>()
+    private val METHODS = setOf("GET", "POST", "PUT", "PATCH", "DELETE", "HEAD", "OPTIONS")
+
+    /** Keeps [message], cleaned, as the latest log line, with the last [MAX_LOGS]. */
+    fun log(message: String, now: Long = System.currentTimeMillis()) {
+        val clean = Redact.logLine(message) ?: return
+        synchronized(logs) {
+            logs.addLast(mapOf("t" to now, "m" to clean))
+            while (logs.size > MAX_LOGS) logs.removeFirst()
+        }
+    }
+
+    /** Keeps a request that failed (no answer, or 400 and up), with the last [MAX_REQUESTS]. */
+    fun logRequest(method: String, url: String, status: Int, now: Long = System.currentTimeMillis()) {
+        if (status != 0 && status < 400) return
+        val clean = Redact.url(url) ?: return
+        val verb = method.trim().uppercase().takeIf { it in METHODS } ?: "GET"
+        synchronized(requests) {
+            requests.addLast(mapOf("t" to now, "method" to verb, "url" to clean, "status" to status))
+            while (requests.size > MAX_REQUESTS) requests.removeFirst()
+        }
+    }
+
+    fun logs(): List<Map<String, Any>> = synchronized(logs) { logs.toList() }
+    fun requests(): List<Map<String, Any>> = synchronized(requests) { requests.toList() }
+
+    /** For tests: forget the log and the failed requests. */
+    fun resetLogs() {
+        synchronized(logs) { logs.clear() }
+        synchronized(requests) { requests.clear() }
+    }
+
     /** The `report` object the server expects next to the message text. */
-    fun fields(appVersion: String?, build: Long?, device: String, os: String, locale: String, screens: List<String>): Map<String, Any> =
+    fun fields(
+        appVersion: String?, build: Long?, device: String, os: String, locale: String, screens: List<String>,
+        logs: List<Map<String, Any>> = emptyList(), requests: List<Map<String, Any>> = emptyList(),
+    ): Map<String, Any> =
         buildMap {
             appVersion?.takeIf { it.isNotBlank() }?.let { put("appVersion", it) }
             build?.let { put("build", it.toString()) }
@@ -60,6 +101,8 @@ internal object BugReports {
             put("os", os)
             put("locale", locale)
             put("screens", screens)
+            if (logs.isNotEmpty()) put("logs", logs)
+            if (requests.isNotEmpty()) put("requests", requests)
         }
 
     /** [fields] for this phone and app. */
@@ -69,12 +112,22 @@ internal object BugReports {
         return fields(
             appVersion = info?.versionName, build = build, device = Client.deviceModel(),
             os = "Android ${Build.VERSION.RELEASE}", locale = Locale.getDefault().toString(), screens = screens(),
+            logs = logs(), requests = requests(),
         )
     }
 
     // opening the report screen
 
     private var opening = false
+
+    /**
+     * Opens the report screen with no screenshot, for the chat's "Send a bug report" card: a
+     * screenshot of the chat would show nothing useful. The user can add one from their photos.
+     */
+    fun openWithoutScreenshot(activity: Activity) {
+        if (opening || activity is BugReportActivity) return
+        activity.startActivity(Intent(activity, BugReportActivity::class.java))
+    }
 
     /** Takes a screenshot of [activity]'s window, then opens the report screen over it. */
     fun open(activity: Activity) {

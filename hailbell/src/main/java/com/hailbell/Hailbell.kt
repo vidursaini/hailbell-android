@@ -14,6 +14,8 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+import okhttp3.Interceptor
+import java.io.IOException
 
 /**
  * In-app support chat. Replies come from Discord or the Hailbell dashboard.
@@ -23,6 +25,12 @@ import kotlinx.coroutines.launch
  */
 @SuppressLint("StaticFieldLeak") // holds the application context only
 object Hailbell {
+    /**
+     * The version of this SDK. It goes to the server with each session, which uses it to know the
+     * chat can show bug report request buttons.
+     */
+    const val SDK_VERSION = "1.2.0"
+
     private val _unreadCount = MutableStateFlow(0)
 
     /** Replies the user has not read yet. Use it for a badge on your support button. */
@@ -194,8 +202,9 @@ object Hailbell {
     /**
      * Takes a screenshot of [activity] and opens the report screen over it, for a "Report a problem"
      * button. The user can mark up or remove the screenshot, describe the problem and send it. The
-     * report lands in the chat inbox with the app version, device, OS version, language and the last
-     * screens from [trackScreen]. Nothing is sent until they tap Send.
+     * report lands in the chat inbox with the app version, device, OS version, language, the last
+     * screens from [trackScreen], and the lines from [log] and failed requests from [logRequest].
+     * Nothing is sent until they tap Send.
      */
     @JvmStatic
     fun reportBug(activity: Activity) {
@@ -204,6 +213,45 @@ object Hailbell {
             return
         }
         BugReports.open(activity)
+    }
+
+    /**
+     * Adds a line to the app's log for bug reports, such as "Restore tapped". Opt-in, and callable from
+     * any thread. The last 50 lines are kept, with the time of each, in memory only: they stay on the
+     * phone and are sent only when the user sends a bug report. Addresses lose their query strings, and
+     * passwords, tokens, keys and other secret-looking parts are removed before the line is kept.
+     */
+    @JvmStatic
+    fun log(message: String) = BugReports.log(message)
+
+    /**
+     * Records a network request for bug reports, if it failed: [status] 0 means no answer (offline,
+     * timed out), and 400 or more is an error. Successful requests are ignored. The last 10 failures
+     * are kept, in memory only, and sent only with a bug report. Only the method, the address and the
+     * status are kept, never bodies or headers, and the address loses its query string and any
+     * secret-looking parts. Callable from any thread. With OkHttp, add [networkInterceptor] instead.
+     */
+    @JvmStatic
+    fun logRequest(method: String, url: String, status: Int) = BugReports.logRequest(method, url, status)
+
+    /**
+     * An OkHttp interceptor that calls [logRequest] for each response of 400 or more, and records
+     * status 0 when a request gets no answer (the error is passed on unchanged). It never reads bodies
+     * or headers. Add it to your app's client:
+     *
+     *     OkHttpClient.Builder().addInterceptor(Hailbell.networkInterceptor).build()
+     */
+    @JvmStatic
+    val networkInterceptor: Interceptor = Interceptor { chain ->
+        val request = chain.request()
+        val response = try {
+            chain.proceed(request)
+        } catch (e: IOException) {
+            logRequest(request.method, request.url.toString(), 0)
+            throw e
+        }
+        if (response.code >= 400) logRequest(request.method, request.url.toString(), response.code)
+        response
     }
 
     // internal

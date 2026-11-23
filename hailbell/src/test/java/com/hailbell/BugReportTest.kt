@@ -9,7 +9,10 @@ import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class BugReportTest {
-    @After fun clear() = BugReports.resetScreens()
+    @After fun clear() {
+        BugReports.resetScreens()
+        BugReports.resetLogs()
+    }
 
     @Test fun trackScreenKeepsTheLastTenAndSkipsRepeatsAndBlanks() {
         BugReports.resetScreens()
@@ -82,6 +85,51 @@ class BugReportTest {
         // No version name: the key is left out rather than sent empty.
         val bare = BugReports.fields(null, null, "Google Pixel 7a", "Android 16", "en_US", emptyList())
         assertEquals(setOf("device", "os", "locale", "screens"), bare.keys)
+    }
+
+    @Test fun logKeepsTheLastFiftyLinesCleaned() {
+        BugReports.resetLogs()
+        (0..50).forEach { BugReports.log("line $it", now = 1_700_000_000_000L + it) }
+        val logs = BugReports.logs()
+        assertEquals(50, logs.size)
+        // The 51st line pushed out the first.
+        assertEquals(mapOf("t" to 1_700_000_000_001L, "m" to "line 1"), logs.first())
+        assertEquals("line 50", logs.last()["m"])
+        Hailbell.log("receipt token=abc")
+        assertEquals("receipt token=[redacted]", BugReports.logs().last()["m"])
+        Hailbell.log("   ")
+        assertEquals(50, BugReports.logs().size)
+    }
+
+    @Test fun onlyFailedRequestsAreKeptAndOnlyTheLastTen() {
+        BugReports.resetLogs()
+        Hailbell.logRequest("GET", "https://api.example.com/v1/ok", 200)
+        Hailbell.logRequest("GET", "https://api.example.com/v1/moved", 302)
+        assertEquals(emptyList<Map<String, Any>>(), BugReports.requests())
+        (0..13).forEach { BugReports.logRequest("post", "https://api.example.com/v1/r/$it?secret=1", 500, now = 7L) }
+        Hailbell.logRequest("BREW", "https://api.example.com/v1/restore", 0)
+        val requests = BugReports.requests()
+        assertEquals(10, requests.size)
+        assertEquals(mapOf("t" to 7L, "method" to "POST", "url" to "https://api.example.com/v1/r/5", "status" to 500), requests.first())
+        assertEquals("GET", requests.last()["method"])
+        assertEquals(0, requests.last()["status"])
+        assertEquals(setOf("t", "method", "url", "status"), requests.last().keys)
+    }
+
+    @Test fun reportFieldsCarryTheLogAndFailedRequestsWhenThereAreAny() {
+        val logs = listOf(mapOf<String, Any>("t" to 1L, "m" to "Restore tapped"))
+        val requests = listOf(mapOf<String, Any>("t" to 2L, "method" to "POST", "url" to "https://a.com/x", "status" to 422))
+        val fields = BugReports.fields(null, null, "Google Pixel 7a", "Android 16", "en_US", emptyList(), logs, requests)
+        assertEquals(logs, fields["logs"])
+        assertEquals(requests, fields["requests"])
+        val empty = BugReports.fields(null, null, "Google Pixel 7a", "Android 16", "en_US", emptyList(), emptyList(), emptyList())
+        assertFalse("logs" in empty)
+        assertFalse("requests" in empty)
+    }
+
+    @Test fun reportCardsAlwaysShow() {
+        assertTrue(Card("report", "Send a bug report", null, null, "sent").isShown)
+        assertFalse(Card("review", "Rate us", null, null, "sent").isShown)
     }
 
     @Test fun messagesParseWithAndWithoutAReport() {

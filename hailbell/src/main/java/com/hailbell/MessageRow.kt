@@ -234,7 +234,7 @@ internal fun NotSent() {
 
 /**
  * Your message with its button inside the bubble: the text, then a full-width pill with a gift for an
- * offer or a star for a review, and a chevron for where it goes. "Not now" sits under the button until
+ * offer, a bug for a bug report request or a star for a review, and a chevron for where it goes. "Not now" sits under the button until
  * they choose.
  */
 @Composable
@@ -258,7 +258,9 @@ private fun CardBubble(text: String, card: Card, theme: ChatTheme, act: (String)
                     act("tapped")
                     val placement = card.placement
                     val activity = context.activity()
-                    if (placement != null) Hailbell.onPaywall?.invoke(placement) { act("purchased") }
+                    // A bug report request opens the report screen without a screenshot: it would only show the chat.
+                    if (card.type == "report") { if (activity != null) BugReports.openWithoutScreenshot(activity) }
+                    else if (placement != null) Hailbell.onPaywall?.invoke(placement) { act("purchased") }
                     else if (card.type == "review" && activity != null) Review.open(activity, card.url)
                     else card.url?.let { runCatching { context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(it))) } }
                 }
@@ -266,13 +268,18 @@ private fun CardBubble(text: String, card: Card, theme: ChatTheme, act: (String)
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(10.dp),
         ) {
-            Icon(if (card.type == "offer") Icons.Filled.CardGiftcard else Icons.Filled.Star, null, Modifier.size(20.dp), tint = theme.onAccent)
+            val icon = when (card.type) {
+                "offer" -> Icons.Filled.CardGiftcard
+                "report" -> Icons.Filled.BugReport
+                else -> Icons.Filled.Star
+            }
+            Icon(icon, null, Modifier.size(20.dp), tint = theme.onAccent)
             Text(
                 card.button, style = ChatType.body.copy(fontWeight = FontWeight.SemiBold), color = theme.onAccent,
                 maxLines = 2, textAlign = TextAlign.Center, modifier = Modifier.weight(1f),
             )
             Icon(
-                if (card.placement != null) Icons.AutoMirrored.Filled.ArrowForwardIos else Icons.Filled.NorthEast, null,
+                if (card.placement != null || card.type == "report") Icons.AutoMirrored.Filled.ArrowForwardIos else Icons.Filled.NorthEast, null,
                 Modifier.size(14.dp), tint = theme.onAccent,
             )
         }

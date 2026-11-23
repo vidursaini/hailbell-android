@@ -20,7 +20,7 @@ Then the dependency in the app's `build.gradle.kts`:
 
 ```kotlin
 dependencies {
-    implementation("com.github.vidursaini:hailbell-android:1.1.3")
+    implementation("com.github.vidursaini:hailbell-android:1.2.0")
 }
 ```
 
@@ -87,6 +87,9 @@ The full guide, with entry points, signed-in users, offers, the Play data safety
 | `Hailbell.shakeToReport` | Default false. When true, shaking the phone opens the bug report screen. |
 | `Hailbell.trackScreen(name)` | Remembers the screen the user is on. A bug report carries the last 10. |
 | `Hailbell.reportBug(activity)` | Takes a screenshot and opens the bug report screen, for a "Report a problem" button. |
+| `Hailbell.log(message)` | Adds a line to the app's log. A bug report carries the last 50, cleaned of secrets. |
+| `Hailbell.logRequest(method, url, status)` | Records a failed request (status 0 for no answer, or 400 and up). A bug report carries the last 10. |
+| `Hailbell.networkInterceptor` | An OkHttp interceptor that calls `logRequest` for you. |
 | `suspend Hailbell.deleteData()` | Deletes the user's chat, images and details from Hailbell. Throws if the server can't be reached. |
 
 `Message`, `Attachment`, `Card` and `BugReport` are public, for apps that read the conversation.
@@ -99,9 +102,24 @@ Bug reports are opt-in. Turn on shake to report, name your screens, and add a "R
 Hailbell.shakeToReport = true          // shaking the phone opens the report screen
 Hailbell.trackScreen("Settings")       // call when each screen appears
 Hailbell.reportBug(activity)           // for a "Report a problem" button
+Hailbell.log("Restore tapped")         // a line for the report's log
 ```
 
 The report screen shows a screenshot of the current screen, which the user can mark up with their finger or remove, and a box for what went wrong. When they tap Send, the report carries the screenshot, their text, the app version and build, the device model, the Android version, the language and the last 10 screens from `trackScreen`. It lands in the normal chat inbox, tagged as a bug report, and the inbox has a Bugs filter. There is no session replay, and nothing is captured or sent until the user taps Send. The accelerometer is only used while `shakeToReport` is on and the app is on screen.
+
+Reports can also carry the app's own log and its failed network requests, so you can see what went wrong without asking. Both are opt-in and kept in memory only, on the phone, until the user sends a report:
+
+```kotlin
+Hailbell.log("Restore tapped")                                   // keeps the last 50 lines
+Hailbell.logRequest("POST", "https://api.example.com/v1/receipt", 422)  // keeps the last 10 failures
+
+// Or let OkHttp record failed requests for you:
+val client = OkHttpClient.Builder().addInterceptor(Hailbell.networkInterceptor).build()
+```
+
+`logRequest` ignores requests that worked. A failed one is status 400 or more, or 0 when there was no answer (offline, timed out); the interceptor records those and passes the error on. Only the method, the address and the status are kept, never bodies or headers. Before anything is kept, addresses lose their query strings and secret-looking parts (emails, tokens, long ids), and log lines lose passwords, tokens, keys and "Bearer" values. The server runs the same cleanup again.
+
+A teammate (from the dashboard, Discord, Telegram or Slack) or the support AI can also ask for a report in the chat: the customer sees a "Send a bug report" button, which opens the report screen without a screenshot, since a screenshot of the chat would show nothing useful. They can add one from their photos with "Add a screenshot".
 
 ## HailbellPush
 
