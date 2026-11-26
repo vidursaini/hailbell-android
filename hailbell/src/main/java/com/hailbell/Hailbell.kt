@@ -29,7 +29,7 @@ object Hailbell {
      * The version of this SDK. It goes to the server with each session, which uses it to know the
      * chat can show bug report request buttons.
      */
-    const val SDK_VERSION = "1.2.0"
+    const val SDK_VERSION = "1.3.0"
 
     private val _unreadCount = MutableStateFlow(0)
 

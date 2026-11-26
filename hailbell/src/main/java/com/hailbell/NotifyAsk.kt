@@ -27,14 +27,19 @@ internal class NotifyAsk {
         if (!Hailbell.asksForNotifications || answered || state.value != State.HIDDEN) return
         val context = Hailbell.context
         if (HailbellPush.canNotify(context)) return
-        // Android 13 and later ask at runtime, once; turned off before that, or refused, means Settings.
-        val canAsk = Build.VERSION.SDK_INT >= 33 && !prefs.getBoolean("notifyRequested", false)
-        state.value = if (canAsk) State.ASK else State.SETTINGS
+        state.value = if (canAsk()) State.ASK else State.SETTINGS
     }
 
-    /** True when the screen should show the system permission prompt. */
-    fun allow(context: Context): Boolean {
-        val ask = state.value == State.ASK
+    /** Android 13 and later ask at runtime, once; turned off before that, or refused, means Settings. */
+    fun canAsk(): Boolean = Build.VERSION.SDK_INT >= 33 && !prefs.getBoolean("notifyRequested", false)
+
+    /**
+     * True when the screen should show the system permission prompt; otherwise opens the app's
+     * notification settings. [ask] is null for this row's own button, or the reply time card's choice:
+     * either way the ask counts as answered, so the row never shows again.
+     */
+    fun allow(context: Context, ask: Boolean? = null): Boolean {
+        @Suppress("NAME_SHADOWING") val ask = ask ?: (state.value == State.ASK)
         finish()
         if (ask) {
             prefs.edit().putBoolean("notifyRequested", true).apply()

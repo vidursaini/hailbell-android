@@ -24,9 +24,11 @@ import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -39,12 +41,15 @@ import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
+import androidx.lifecycle.compose.LocalLifecycleOwner
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
 /** The chat: header, messages and composer. [onClose] dismisses the sheet. */
 @Composable
-internal fun ChatScreen(model: ChatModel, theme: ChatTheme, onClose: () -> Unit, onAllowNotifications: () -> Unit) {
+internal fun ChatScreen(model: ChatModel, theme: ChatTheme, onClose: () -> Unit, onAllowNotifications: (ask: Boolean?) -> Unit) {
     val messages by model.messages.collectAsState()
     val pending by model.pending.collectAsState()
     val appearance by model.appearance.collectAsState()
@@ -61,6 +66,22 @@ internal fun ChatScreen(model: ChatModel, theme: ChatTheme, onClose: () -> Unit,
     val appName by model.appName.collectAsState()
     val scope = rememberCoroutineScope()
     var highlighted by remember { mutableStateOf<String?>(null) }
+    // Whether notifications reach the phone, checked again each time the screen comes back (after the
+    // system prompt or Settings), so the reply time card shows the right offer.
+    val lifecycle = LocalLifecycleOwner.current.lifecycle
+    var resumed by remember { mutableIntStateOf(0) }
+    DisposableEffect(lifecycle) {
+        val observer = LifecycleEventObserver { _, event -> if (event == Lifecycle.Event.ON_RESUME) resumed++ }
+        lifecycle.addObserver(observer)
+        onDispose { lifecycle.removeObserver(observer) }
+    }
+    val canNotify = remember(resumed) { HailbellPush.canNotify(Hailbell.context) }
+    val canAsk = remember(resumed, ask) { model.notifyAsk.canAsk() }
+    val notifyFor = { m: Message ->
+        m.expect?.let { ReplyTime.notify(it, ReplyTime.teamReplied(m, messages), canNotify, canAsk) } ?: ReplyTime.Notify.NONE
+    }
+    // The card's offer replaces the ask after the first message.
+    val cardOffers = messages.any { it.showsExpectCard && notifyFor(it) != ReplyTime.Notify.NONE }
     val title = appearance.title ?: L10n.text("supportTitle", mapOf("name" to appName)).trim()
     val nameFor = { author: String, authorName: String? -> replyName(author, authorName, title, appearance.agentNames) }
     // Tapping a quote scrolls to the original, if it's loaded, and tints it for a moment.
@@ -102,6 +123,14 @@ internal fun ChatScreen(model: ChatModel, theme: ChatTheme, onClose: () -> Unit,
                 Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
                     val i = messages.indexOf(m)
                     if (i == 0 || !sameDay(messages[i - 1].createdAt, m.createdAt)) DayChip(m.createdAt, theme)
+                    val expect = m.expect
+                    if (m.showsExpectCard && expect != null) {
+                        // Out of date once the team has replied ("offline right now"), so it goes, as on the web.
+                        if (!ReplyTime.teamReplied(m, messages)) {
+                            ExpectCard(m, expect, notifyFor(m), theme) { onAllowNotifications(it == ReplyTime.Notify.ASK) }
+                        }
+                        return@Column
+                    }
                     val photo = model.photo(m, appearance, team)
                     MessageRow(
                         m, caption(model, m, messages, appearance), photo,
@@ -139,7 +168,7 @@ internal fun ChatScreen(model: ChatModel, theme: ChatTheme, onClose: () -> Unit,
                     }
                 }
             }
-            item("ask") { NotifyAskRow(ask, theme, onAllowNotifications) { model.notifyAsk.finish() } }
+            item("ask") { if (!cardOffers) NotifyAskRow(ask, theme, { onAllowNotifications(null) }) { model.notifyAsk.finish() } }
             item("bottom") { Spacer(Modifier.height(1.dp)) }
         }
         Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {

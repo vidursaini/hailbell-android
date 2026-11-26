@@ -127,20 +127,32 @@ data class Message(
     val report: BugReport? = null,
     /** Set when this message replies to another one: a snapshot of the quoted message. */
     val replyTo: ReplyTo? = null,
+    /** Set on the reply time card (author "system"): when the customer can expect a reply. */
+    val expect: Expect? = null,
 ) {
+    /** The constructor before [expect] existed, kept so apps built against an older version still link. */
+    @Deprecated("Use the constructor with expect", level = DeprecationLevel.HIDDEN)
+    constructor(
+        id: String, author: String, authorName: String?, body: String, attachments: List<Attachment>, clientId: String?,
+        createdAt: Double, card: Card?, authorAvatarUrl: String?, report: BugReport?, replyTo: ReplyTo?,
+    ) : this(id, author, authorName, body, attachments, clientId, createdAt, card, authorAvatarUrl, report, replyTo, null)
+
     /** The constructor before [replyTo] existed, kept so apps built against an older version still link. */
     @Deprecated("Use the constructor with replyTo", level = DeprecationLevel.HIDDEN)
     constructor(
         id: String, author: String, authorName: String?, body: String, attachments: List<Attachment>, clientId: String?,
         createdAt: Double, card: Card?, authorAvatarUrl: String?, report: BugReport?,
-    ) : this(id, author, authorName, body, attachments, clientId, createdAt, card, authorAvatarUrl, report, null)
+    ) : this(id, author, authorName, body, attachments, clientId, createdAt, card, authorAvatarUrl, report, null, null)
 
     val isMine: Boolean get() = author == "user"
+
+    /** True when this is a reply time card the SDK can draw; anything else shows as a plain bubble. */
+    val showsExpectCard: Boolean get() = author == "system" && expect?.isKnown == true
 
     internal fun json(): JSONObject = JSONObject().put("id", id).put("author", author).putOpt("authorName", authorName)
         .put("body", body).put("attachments", JSONArray(attachments.map { it.json() })).putOpt("clientId", clientId)
         .put("createdAt", createdAt).putOpt("card", card?.json()).putOpt("authorAvatarUrl", authorAvatarUrl)
-        .putOpt("report", report?.json()).putOpt("replyTo", replyTo?.json())
+        .putOpt("report", report?.json()).putOpt("replyTo", replyTo?.json()).putOpt("expect", expect?.json())
 
     internal companion object {
         fun parse(o: JSONObject) = Message(
@@ -155,7 +167,56 @@ data class Message(
             authorAvatarUrl = o.optStringOrNull("authorAvatarUrl"),
             report = o.optJSONObject("report")?.let(BugReport::parse),
             replyTo = o.optJSONObject("replyTo")?.let(ReplyTo::parse),
+            expect = Expect.parse(o.opt("expect")),
         )
+    }
+}
+
+/**
+ * The reply time card's details: when the AI handed the chat to the team while nobody was around.
+ * `kind` is "back" (offline until [backAt], ms since 1970), "typical" (usually replies within [hours])
+ * or "soon". [name] is who replies. [notify] offers a notification when they reply. [ownerZone] and
+ * [ownerCountry] (an IANA zone and an ISO country) are set when the card may show their local time.
+ */
+data class Expect(
+    val kind: String,
+    val name: String,
+    val backAt: Double? = null,
+    val hours: Int? = null,
+    val notify: Boolean = false,
+    val ownerZone: String? = null,
+    val ownerCountry: String? = null,
+) {
+    /** A kind this SDK knows, with the field it needs. Unknown kinds fall back to the message's text. */
+    val isKnown: Boolean get() = when (kind) {
+        "back" -> backAt != null
+        "typical" -> hours != null
+        "soon" -> true
+        else -> false
+    }
+
+    internal fun json(): JSONObject = JSONObject().put("kind", kind).put("name", name).putOpt("backAt", backAt)
+        .putOpt("hours", hours).put("notify", notify).putOpt("ownerZone", ownerZone).putOpt("ownerCountry", ownerCountry)
+
+    internal companion object {
+        /** Null when missing or malformed, so a bad `expect` never breaks the message. Accepts an object or its JSON text. */
+        fun parse(value: Any?): Expect? {
+            val o = when (value) {
+                is JSONObject -> value
+                is String -> runCatching { JSONObject(value) }.getOrNull()
+                else -> null
+            } ?: return null
+            val kind = o.optStringOrNull("kind")?.takeIf(String::isNotEmpty) ?: return null
+            return Expect(
+                kind = kind,
+                name = o.optStringOrNull("name") ?: "",
+                backAt = o.optDoubleOrNull("backAt"),
+                hours = o.optDoubleOrNull("hours")?.let { Math.round(it).toInt() },
+                notify = o.optBoolean("notify", false),
+                ownerZone = o.optStringOrNull("ownerZone")?.takeIf(String::isNotEmpty),
+                ownerCountry = o.optStringOrNull("ownerCountry")?.takeIf(String::isNotEmpty),
+            )
+        }
     }
 }
 

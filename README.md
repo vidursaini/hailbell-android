@@ -2,6 +2,8 @@
 
 In-app support chat and push notifications for Android 8 (API 26) and later, in Kotlin and Jetpack Compose. Customers write from a native chat screen inside your app; you answer from the [Hailbell](https://hailbell.com) dashboard, Discord or Telegram, and your reply reaches them live or as a push notification. It mirrors the iOS SDK: the same API names, the same screens and the same server.
 
+When the support AI hands a chat to your team while nobody is around, the chat shows a reply time card saying when to expect a reply, in the customer's own time, with a button to turn on notifications. The card arrived in 1.3.0; earlier versions show the same words as a normal message.
+
 ## Install
 
 The library is published through [JitPack](https://jitpack.io/#vidursaini/hailbell-android). Add the JitPack repository in `settings.gradle.kts`:

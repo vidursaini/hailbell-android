@@ -127,9 +127,9 @@ private fun Sheet(onClosed: () -> Unit) {
                 ),
         ) {
             Column(Modifier.fillMaxSize().navigationBarsPadding().imePadding()) {
-                ChatScreen(model, theme, onClose = dismiss, onAllowNotifications = {
+                ChatScreen(model, theme, onClose = dismiss, onAllowNotifications = { ask ->
                     val context = Hailbell.context
-                    if (model.notifyAsk.allow(context) && Build.VERSION.SDK_INT >= 33 &&
+                    if (model.notifyAsk.allow(context, ask) && Build.VERSION.SDK_INT >= 33 &&
                         context.checkSelfPermission(NotifyAsk.PERMISSION) != PackageManager.PERMISSION_GRANTED
                     ) permission.launch(NotifyAsk.PERMISSION)
                 })
