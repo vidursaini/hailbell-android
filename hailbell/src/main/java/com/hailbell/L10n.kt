@@ -23,6 +23,8 @@ internal object L10n {
 
     private val table: Map<String, Map<String, String>> = mapOf(
         "en" to mapOf(
+            "edited" to "Edited",
+            "deleted" to "This message was deleted",
             "welcomeTitle" to "Questions, bugs or ideas?",
             "welcomeText" to "Send us a message and we’ll reply right here. You can close this and come back later.",
             "placeholder" to "Write a message…",
@@ -86,6 +88,8 @@ internal object L10n {
             "expectSave" to "Notify me",
         ),
         "es" to mapOf(
+            "edited" to "Editado",
+            "deleted" to "Este mensaje se eliminó",
             "welcomeTitle" to "¿Preguntas, errores o ideas?",
             "welcomeText" to "Envíanos un mensaje y te responderemos aquí. Puedes cerrar esto y volver más tarde.",
             "placeholder" to "Escribe un mensaje…",
@@ -149,6 +153,8 @@ internal object L10n {
             "expectSave" to "Avísame",
         ),
         "fr" to mapOf(
+            "edited" to "Modifié",
+            "deleted" to "Ce message a été supprimé",
             "welcomeTitle" to "Des questions, des bugs ou des idées ?",
             "welcomeText" to "Envoyez-nous un message et nous vous répondrons ici. Vous pouvez fermer et revenir plus tard.",
             "placeholder" to "Écrivez un message…",
@@ -212,6 +218,8 @@ internal object L10n {
             "expectSave" to "Me prévenir",
         ),
         "de" to mapOf(
+            "edited" to "Bearbeitet",
+            "deleted" to "Diese Nachricht wurde gelöscht",
             "welcomeTitle" to "Fragen, Fehler oder Ideen?",
             "welcomeText" to "Schreib uns eine Nachricht, wir antworten hier. Du kannst das Fenster schließen und später zurückkommen.",
             "placeholder" to "Nachricht schreiben…",
@@ -275,6 +283,8 @@ internal object L10n {
             "expectSave" to "Benachrichtigen",
         ),
         "it" to mapOf(
+            "edited" to "Modificato",
+            "deleted" to "Questo messaggio è stato eliminato",
             "welcomeTitle" to "Domande, bug o idee?",
             "welcomeText" to "Scrivici un messaggio e ti risponderemo qui. Puoi chiudere e tornare più tardi.",
             "placeholder" to "Scrivi un messaggio…",
@@ -338,6 +348,8 @@ internal object L10n {
             "expectSave" to "Avvisami",
         ),
         "pt" to mapOf(
+            "edited" to "Editado",
+            "deleted" to "Esta mensagem foi apagada",
             "welcomeTitle" to "Dúvidas, bugs ou ideias?",
             "welcomeText" to "Envie uma mensagem e responderemos aqui. Você pode fechar e voltar depois.",
             "placeholder" to "Escreva uma mensagem…",
@@ -401,6 +413,8 @@ internal object L10n {
             "expectSave" to "Me avise",
         ),
         "nl" to mapOf(
+            "edited" to "Bewerkt",
+            "deleted" to "Dit bericht is verwijderd",
             "welcomeTitle" to "Vragen, bugs of ideeën?",
             "welcomeText" to "Stuur ons een bericht, we antwoorden hier. Je kunt dit sluiten en later terugkomen.",
             "placeholder" to "Schrijf een bericht…",
@@ -464,6 +478,8 @@ internal object L10n {
             "expectSave" to "Laat het weten",
         ),
         "ja" to mapOf(
+            "edited" to "編集済み",
+            "deleted" to "このメッセージは削除されました",
             "welcomeTitle" to "質問、不具合、アイデアはありますか？",
             "welcomeText" to "メッセージを送ってください。ここで返信します。閉じて後で戻ってきても大丈夫です。",
             "placeholder" to "メッセージを入力…",
@@ -527,6 +543,8 @@ internal object L10n {
             "expectSave" to "通知する",
         ),
         "ko" to mapOf(
+            "edited" to "수정됨",
+            "deleted" to "삭제된 메시지입니다",
             "welcomeTitle" to "질문, 버그, 아이디어가 있나요?",
             "welcomeText" to "메시지를 보내 주시면 여기에서 답장해 드릴게요. 창을 닫았다가 나중에 다시 와도 됩니다.",
             "placeholder" to "메시지 입력…",
@@ -590,6 +608,8 @@ internal object L10n {
             "expectSave" to "알림 받기",
         ),
         "zh" to mapOf(
+            "edited" to "已编辑",
+            "deleted" to "此消息已删除",
             "welcomeTitle" to "有问题、Bug 或想法？",
             "welcomeText" to "给我们发消息，我们会在这里回复。你可以先关闭，稍后再回来查看。",
             "placeholder" to "输入消息…",
@@ -653,6 +673,8 @@ internal object L10n {
             "expectSave" to "通知我",
         ),
         "hi" to mapOf(
+            "edited" to "संपादित",
+            "deleted" to "यह संदेश हटा दिया गया",
             "welcomeTitle" to "सवाल, बग या कोई आइडिया?",
             "welcomeText" to "हमें संदेश भेजें, हम यहीं जवाब देंगे। आप इसे बंद करके बाद में लौट सकते हैं।",
             "placeholder" to "संदेश लिखें…",
@@ -716,6 +738,8 @@ internal object L10n {
             "expectSave" to "मुझे बताएँ",
         ),
         "tr" to mapOf(
+            "edited" to "Düzenlendi",
+            "deleted" to "Bu mesaj silindi",
             "welcomeTitle" to "Sorular, hatalar ya da fikirler?",
             "welcomeText" to "Bize mesaj gönderin, buradan yanıtlayalım. Kapatıp daha sonra geri dönebilirsiniz.",
             "placeholder" to "Mesaj yazın…",
@@ -779,6 +803,8 @@ internal object L10n {
             "expectSave" to "Haber ver",
         ),
         "ru" to mapOf(
+            "edited" to "Изменено",
+            "deleted" to "Сообщение удалено",
             "welcomeTitle" to "Вопросы, ошибки или идеи?",
             "welcomeText" to "Напишите нам, и мы ответим здесь. Можно закрыть окно и вернуться позже.",
             "placeholder" to "Напишите сообщение…",
@@ -842,6 +868,8 @@ internal object L10n {
             "expectSave" to "Сообщить",
         ),
         "id" to mapOf(
+            "edited" to "Diedit",
+            "deleted" to "Pesan ini dihapus",
             "welcomeTitle" to "Ada pertanyaan, bug, atau ide?",
             "welcomeText" to "Kirim pesan dan kami akan membalas di sini. Kamu bisa menutup ini dan kembali nanti.",
             "placeholder" to "Tulis pesan…",

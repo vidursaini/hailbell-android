@@ -129,7 +129,18 @@ data class Message(
     val replyTo: ReplyTo? = null,
     /** Set on the reply time card (author "system"): when the customer can expect a reply. */
     val expect: Expect? = null,
+    /** True when the team changed this reply after the customer had read it: the chat says "Edited". */
+    val edited: Boolean = false,
+    /** True when the team deleted this reply: the chat shows a marker in its place. */
+    val deleted: Boolean = false,
 ) {
+    /** The constructor before [edited] and [deleted] existed, kept so apps built against an older version still link. */
+    @Deprecated("Use the constructor with edited and deleted", level = DeprecationLevel.HIDDEN)
+    constructor(
+        id: String, author: String, authorName: String?, body: String, attachments: List<Attachment>, clientId: String?,
+        createdAt: Double, card: Card?, authorAvatarUrl: String?, report: BugReport?, replyTo: ReplyTo?, expect: Expect?,
+    ) : this(id, author, authorName, body, attachments, clientId, createdAt, card, authorAvatarUrl, report, replyTo, expect, false, false)
+
     /** The constructor before [expect] existed, kept so apps built against an older version still link. */
     @Deprecated("Use the constructor with expect", level = DeprecationLevel.HIDDEN)
     constructor(
@@ -153,6 +164,7 @@ data class Message(
         .put("body", body).put("attachments", JSONArray(attachments.map { it.json() })).putOpt("clientId", clientId)
         .put("createdAt", createdAt).putOpt("card", card?.json()).putOpt("authorAvatarUrl", authorAvatarUrl)
         .putOpt("report", report?.json()).putOpt("replyTo", replyTo?.json()).putOpt("expect", expect?.json())
+        .put("edited", edited).put("deleted", deleted)
 
     internal companion object {
         fun parse(o: JSONObject) = Message(
@@ -168,6 +180,8 @@ data class Message(
             report = o.optJSONObject("report")?.let(BugReport::parse),
             replyTo = o.optJSONObject("replyTo")?.let(ReplyTo::parse),
             expect = Expect.parse(o.opt("expect")),
+            edited = o.optBoolean("edited", false),
+            deleted = o.optBoolean("deleted", false),
         )
     }
 }

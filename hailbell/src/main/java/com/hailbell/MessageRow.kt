@@ -1,5 +1,7 @@
 package com.hailbell
 
+import androidx.compose.ui.unit.sp
+import androidx.compose.ui.text.font.FontStyle
 import android.content.Intent
 import android.graphics.Bitmap
 import android.net.Uri
@@ -81,6 +83,8 @@ internal fun MessageRow(
     quoteName: String? = null, onQuote: ((String) -> Unit)? = null, onReply: (() -> Unit)? = null, highlighted: Boolean = false,
 ) {
     val mine = message.isMine
+    // A deleted reply is a marker: nothing to answer or copy.
+    @Suppress("NAME_SHADOWING") val onReply = if (message.deleted) null else onReply
     // AI replies carry the sparkles mark; yours carry your photo when there is one to show.
     val ai = message.author == "bot"
     val hasFace = ai || (!mine && (bundledPhoto != null || photo != null))
@@ -98,6 +102,7 @@ internal fun MessageRow(
                         if (ai) AIAvatar(28.dp, theme, face) else if (hasFace) Avatar(bundledPhoto, photo, 28.dp, theme, face)
                         MessageMenu(message, onReply) {
                             Column(horizontalAlignment = if (mine) Alignment.End else Alignment.Start, verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                                if (message.deleted) DeletedBubble(theme) else {
                                 if (mine && message.report != null) ReportLabel(theme)
                                 val card = message.card
                                 val cardShown = card != null && card.isShown
@@ -115,6 +120,8 @@ internal fun MessageRow(
                                         quote = quote?.let { q -> { QuoteBlock(q, name, mine, theme, onQuote) } },
                                     )
                                 }
+                                if (message.edited) Text(L10n.text("edited"), style = ChatType.caption2, color = theme.secondary, modifier = Modifier.padding(horizontal = 6.dp))
+                                }
                             }
                         }
                     }
@@ -122,6 +129,15 @@ internal fun MessageRow(
             }
         }
     }
+}
+
+/** In place of a reply the team deleted: a quiet outlined line. */
+@Composable
+private fun DeletedBubble(theme: ChatTheme) {
+    Text(
+        L10n.text("deleted"), style = ChatType.subheadline.copy(fontStyle = FontStyle.Italic), color = theme.secondary,
+        modifier = Modifier.border(1.dp, theme.secondary.copy(alpha = 0.3f), RoundedCornerShape(18.dp)).padding(horizontal = 12.dp, vertical = 8.dp),
+    )
 }
 
 /**

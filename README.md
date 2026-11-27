@@ -153,6 +153,10 @@ A teammate (from the dashboard, Discord, Telegram or Slack) or the support AI ca
 
 `./gradlew :hailbell:assembleRelease` builds the library with JDK 17 or later and the Android SDK. `./gradlew :hailbell:testReleaseUnitTest` runs the unit tests.
 
+## Edited and deleted replies
+
+Your team can edit or delete a reply after sending it (dashboard). The chat shows the new wording, with "Edited" under it when the customer had already read the old one, and "This message was deleted" in place of a deleted reply, in the customer's language. Both arrived in 1.4.0; earlier versions show the new wording without the label, and a deleted reply as that line in English. `Message.edited` and `Message.deleted` carry the two flags. Nothing to set up.
+
 ## Support and license
 
 Questions: hello@hailbell.com, or the chat on [hailbell.com](https://hailbell.com).

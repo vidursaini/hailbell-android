@@ -460,9 +460,12 @@ internal class ChatModel {
             }
             "message" -> {
                 val message = event.optJSONObject("message")?.let(Message::parse) ?: return
+                // A message we already have, sent again: the team edited or deleted it. The copy is
+                // replaced and nothing counts as new.
+                val known = messages.value.any { it.id == message.id }
                 insert(message)
                 saveCache()
-                if (!message.isMine) {
+                if (!message.isMine && !known) {
                     agentTyping.value = false
                     if (visible) markRead() else Hailbell.setUnread(Hailbell.unreadCount.value + 1)
                 }
