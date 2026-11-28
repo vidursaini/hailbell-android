@@ -12,7 +12,7 @@ import org.junit.Test
  * in while the chat hasn't heard otherwise, and each reply shows its own teammate's photo.
  */
 class ReplyIdentityTest {
-    private fun team(avatar: String? = null, photo: Boolean? = null, profile: Boolean? = null) = listOf(TeamMember("Vidur", avatar, photo, profile))
+    private fun team(avatar: String? = null, photo: Boolean? = null, profile: Boolean? = null) = listOf(TeamMember("Bello", avatar, photo, profile))
 
     @Test fun bundledPhotoShowsOnlyWhenTheServerHasNoOtherAnswer() {
         assertTrue(allowsBundledPhoto(Appearance(), team()))
@@ -36,8 +36,8 @@ class ReplyIdentityTest {
         assertEquals(reply, Message.parse(reply.json()))
         // Copies saved by an older version have neither field.
         assertNull(Message.parse(JSONObject("""{"id":"m0","author":"agent","body":"hi","createdAt":0}""")).authorAvatarUrl)
-        assertNull(TeamMember.parse(JSONObject("""{"name":"Vidur"}""")).photo)
-        val member = TeamMember("Vidur", "/v1/files/att_1/k", true, true)
+        assertNull(TeamMember.parse(JSONObject("""{"name":"Bello"}""")).photo)
+        val member = TeamMember("Bello", "/v1/files/att_1/k", true, true)
         assertEquals(member, TeamMember.parse(member.json()))
         assertEquals(Appearance(agentIdentity = "team"), Appearance.parse(Appearance(agentIdentity = "team").json()))
     }

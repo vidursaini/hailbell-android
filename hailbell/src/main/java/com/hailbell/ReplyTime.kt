@@ -78,12 +78,20 @@ internal object ReplyTime {
         }
     }
 
-    /** "It's 02:22 for Vidur in India.", or null without a valid zone and country. */
+    /**
+     * Countries whose English name takes "the": "in the United States", "in the Netherlands". The other
+     * languages' sentences put the country in brackets or need no article.
+     */
+    private val englishThe = setOf("US", "GB", "AE", "NL", "PH", "BS", "GM", "MV", "SC", "KM", "DO", "CF", "MH", "SB", "KY", "FK", "FO", "CK", "VG", "VI", "TC", "MP", "IM", "AX")
+
+    /** "It's 02:22 for Bello in the United States.", or null without a valid zone and country. */
     fun ownerLine(e: Expect, now: Long, locale: Locale, is24: Boolean, lang: String = L10n.language): String? {
         val zoneId = e.ownerZone ?: return null
         val country = e.ownerCountry ?: return null
         val zone = try { ZoneId.of(zoneId) } catch (_: DateTimeException) { return null }
-        val place = Locale("", country).getDisplayCountry(locale).ifEmpty { country }
+        // The country in the card's language, so the sentence never mixes two.
+        var place = Locale("", country).getDisplayCountry(Locale(lang)).ifEmpty { country }
+        if (lang == "en" && country in englishThe) place = "the $place"
         return L10n.text("expectOwnerTime", mapOf("time" to clock(now, zone, locale, is24), "name" to e.name, "place" to place), lang)
     }
 

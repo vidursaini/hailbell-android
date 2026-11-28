@@ -15,7 +15,7 @@ import java.util.Locale
 // Previews of each state, in English. Rendered with Android Studio's preview or Paparazzi-free screenshots.
 
 private val previewNow = 1_764_171_000_000L // 2025-11-26 15:30 in London, 21:00 in Kolkata
-private val previewBack = Expect("back", "Vidur", backAt = (previewNow + 8 * 3_600_000L).toDouble(), notify = true, ownerZone = "Asia/Kolkata", ownerCountry = "IN")
+private val previewBack = Expect("back", "Bello", backAt = (previewNow + 8 * 3_600_000L).toDouble(), notify = true, ownerZone = "America/New_York", ownerCountry = "US")
 
 @Composable
 private fun PreviewCard(expect: Expect, notify: ReplyTime.Notify, dark: Boolean, is24: Boolean = true) {
@@ -38,7 +38,7 @@ private fun ExpectNotifiedPreview() = PreviewCard(previewBack, ReplyTime.Notify.
 
 @Preview(name = "Typical", widthDp = 360)
 @Composable
-private fun ExpectTypicalPreview() = PreviewCard(Expect("typical", "Vidur", hours = 3), ReplyTime.Notify.SETTINGS, dark = false)
+private fun ExpectTypicalPreview() = PreviewCard(Expect("typical", "Bello", hours = 3), ReplyTime.Notify.SETTINGS, dark = false)
 
 @Preview(name = "Back, dark", widthDp = 360)
 @Composable

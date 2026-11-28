@@ -18,17 +18,17 @@ class ReplyTimeTest {
 
     // Wednesday 26 November 2025, 15:00 in London.
     private val now = at(2025, 11, 26, 15)
-    private fun back(at: Long, notify: Boolean = true) = Expect("back", "Vidur", backAt = at.toDouble(), notify = notify)
+    private fun back(at: Long, notify: Boolean = true) = Expect("back", "Bello", backAt = at.toDouble(), notify = notify)
 
     @Test fun parsesTheCardAndRoundTripsIt() {
         val m = Message.parse(JSONObject(
-            """{"id":"m1","author":"system","body":"Vidur is offline right now.","createdAt":1,
-               "expect":{"kind":"back","name":"Vidur","backAt":1764199800000,"notify":true,"ownerZone":"Asia/Kolkata","ownerCountry":"IN"}}""",
+            """{"id":"m1","author":"system","body":"Bello is offline right now.","createdAt":1,
+               "expect":{"kind":"back","name":"Bello","backAt":1764199800000,"notify":true,"ownerZone":"Asia/Kolkata","ownerCountry":"IN"}}""",
         ))
-        assertEquals(Expect("back", "Vidur", 1_764_199_800_000.0, null, true, "Asia/Kolkata", "IN"), m.expect)
+        assertEquals(Expect("back", "Bello", 1_764_199_800_000.0, null, true, "Asia/Kolkata", "IN"), m.expect)
         assertTrue(m.showsExpectCard)
         assertEquals(m, Message.parse(m.json()))
-        val typical = Message.parse(JSONObject("""{"id":"m2","author":"system","body":"x","createdAt":1,"expect":{"kind":"typical","name":"Vidur","hours":3,"notify":false}}"""))
+        val typical = Message.parse(JSONObject("""{"id":"m2","author":"system","body":"x","createdAt":1,"expect":{"kind":"typical","name":"Bello","hours":3,"notify":false}}"""))
         assertEquals(3, typical.expect?.hours)
         assertTrue(typical.showsExpectCard)
     }
@@ -39,11 +39,11 @@ class ReplyTimeTest {
         assertNull(parse(""","expect":null""").expect)
         assertNull(parse(""","expect":5""").expect)
         assertNull(parse(""","expect":"not json"""").expect)
-        assertNull(parse(""","expect":{"name":"Vidur"}""").expect)
-        assertFalse(parse(""","expect":{"kind":"later","name":"Vidur"}""").showsExpectCard) // unknown kind
-        assertFalse(parse(""","expect":{"kind":"back","name":"Vidur"}""").showsExpectCard) // no backAt
-        assertFalse(parse(""","expect":{"kind":"typical","name":"Vidur"}""").showsExpectCard) // no hours
-        assertTrue(parse(""","expect":{"kind":"soon","name":"Vidur"}""").showsExpectCard)
+        assertNull(parse(""","expect":{"name":"Bello"}""").expect)
+        assertFalse(parse(""","expect":{"kind":"later","name":"Bello"}""").showsExpectCard) // unknown kind
+        assertFalse(parse(""","expect":{"kind":"back","name":"Bello"}""").showsExpectCard) // no backAt
+        assertFalse(parse(""","expect":{"kind":"typical","name":"Bello"}""").showsExpectCard) // no hours
+        assertTrue(parse(""","expect":{"kind":"soon","name":"Bello"}""").showsExpectCard)
         // Only a system message draws the card.
         assertFalse(Message.parse(JSONObject("""{"id":"m0","author":"agent","body":"hi","createdAt":0,"expect":{"kind":"soon","name":"V"}}""")).showsExpectCard)
     }
@@ -73,7 +73,7 @@ class ReplyTimeTest {
         assertEquals("Usually back by 15:00 tomorrow, your time.", line(at(2025, 11, 27, 15)))
         // Already past: the title alone.
         val past = ReplyTime.words(back(now - 1), now, london, Locale.UK, true, "en")
-        assertEquals("Vidur is offline right now", past.title)
+        assertEquals("Bello is offline right now", past.title)
         assertNull(past.line)
         val w = ReplyTime.words(back(at(2025, 11, 26, 23, 30)), now, london, Locale.UK, true, "en")
         assertEquals("23:30 tonight", w.bold)
@@ -84,18 +84,23 @@ class ReplyTimeTest {
 
     @Test fun typicalAndSoon() {
         fun words(e: Expect) = ReplyTime.words(e, now, london, Locale.UK, true, "en")
-        assertEquals("Vidur will reply here", words(Expect("typical", "Vidur", hours = 3)).title)
-        assertEquals("At this time of day Vidur usually replies within 3 hours.", words(Expect("typical", "Vidur", hours = 3)).line)
-        assertEquals("At this time of day Vidur usually replies within an hour.", words(Expect("typical", "Vidur", hours = 1)).line)
-        assertEquals("Vidur will reply as soon as possible.", words(Expect("soon", "Vidur")).line)
-        assertNull(words(Expect("soon", "Vidur")).bold)
+        assertEquals("Bello will reply here", words(Expect("typical", "Bello", hours = 3)).title)
+        assertEquals("At this time of day Bello usually replies within 3 hours.", words(Expect("typical", "Bello", hours = 3)).line)
+        assertEquals("At this time of day Bello usually replies within an hour.", words(Expect("typical", "Bello", hours = 1)).line)
+        assertEquals("Bello will reply as soon as possible.", words(Expect("soon", "Bello")).line)
+        assertNull(words(Expect("soon", "Bello")).bold)
     }
 
     @Test fun ownerTime() {
-        val e = Expect("soon", "Vidur", ownerZone = "Asia/Kolkata", ownerCountry = "IN")
+        val e = Expect("soon", "Bello", ownerZone = "Asia/Kolkata", ownerCountry = "IN")
         // 15:00 in London is 20:30 in Kolkata.
-        assertEquals("It’s 20:30 for Vidur in India.", ReplyTime.words(e, now, london, Locale.UK, true, "en").ownerLine)
-        assertEquals("Bei Vidur in Indien ist es 20:30.", ReplyTime.words(e, now, london, Locale.GERMANY, true, "de").ownerLine)
+        assertEquals("It’s 20:30 for Bello in India.", ReplyTime.words(e, now, london, Locale.UK, true, "en").ownerLine)
+        assertEquals("Bei Bello (Indien) ist es 20:30.", ReplyTime.words(e, now, london, Locale.GERMANY, true, "de").ownerLine)
+        // English adds "the" where the country's name needs it; the phone's own language doesn't change the country's.
+        val us = Expect("soon", "Bello", ownerZone = "Asia/Kolkata", ownerCountry = "US")
+        assertEquals("It’s 20:30 for Bello in the United States.", ReplyTime.words(us, now, london, Locale.UK, true, "en").ownerLine)
+        assertEquals("It’s 20:30 for Bello in the Netherlands.", ReplyTime.words(us.copy(ownerCountry = "NL"), now, london, Locale.GERMANY, true, "en").ownerLine)
+        assertEquals("Son las 20:30 para Bello en Estados Unidos.", ReplyTime.words(us, now, london, Locale("es", "ES"), true, "es").ownerLine)
         assertNull(ReplyTime.words(e.copy(ownerCountry = null), now, london, Locale.UK, true, "en").ownerLine)
         assertNull(ReplyTime.words(e.copy(ownerZone = "Not/AZone"), now, london, Locale.UK, true, "en").ownerLine)
     }
